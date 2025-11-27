@@ -2,13 +2,21 @@
 import moviesData from '../../../data/data.json';
 
 export default async function handler(req, res) {
+  // Log the request
+  console.log('=== TELEGRAM WEBHOOK CALLED ===');
+  console.log('Method:', req.method);
+  console.log('Headers:', req.headers);
+  
   if (req.method !== 'POST') {
+    console.log('Returning 405 - Method not allowed');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://movieondemand.vercel.app';
 
+  console.log('TELEGRAM_BOT_TOKEN exists:', !!TELEGRAM_BOT_TOKEN);
+  
   if (!TELEGRAM_BOT_TOKEN) {
     console.error('TELEGRAM_BOT_TOKEN is missing');
     return res.status(500).json({ error: 'Server configuration error' });
@@ -16,7 +24,7 @@ export default async function handler(req, res) {
 
   try {
     const update = req.body;
-    console.log('Telegram webhook received:', JSON.stringify(update));
+    console.log('Update body:', JSON.stringify(update, null, 2));
     
     if (update.message) {
       await handleMessage(update.message, TELEGRAM_BOT_TOKEN, BASE_URL, moviesData);
@@ -24,6 +32,7 @@ export default async function handler(req, res) {
       await handleCallbackQuery(update.callback_query, TELEGRAM_BOT_TOKEN, BASE_URL, moviesData);
     }
 
+    console.log('Webhook processed successfully');
     res.status(200).json({ ok: true });
   } catch (error) {
     console.error('Telegram webhook error:', error);
