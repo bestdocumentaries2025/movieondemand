@@ -1,4 +1,3 @@
-// pages/api/telegram/webhook.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -42,14 +41,16 @@ async function handleMessage(message, TELEGRAM_BOT_TOKEN, BASE_URL) {
   if (text.startsWith('/start')) {
     const parts = text.split(' ');
     movieSlug = parts[1] || '';
-    console.log('Movie slug found:', movieSlug);
+    console.log('Movie slug extracted:', movieSlug);
   }
 
-  // If we have a movie slug, send DIRECT VIDEO LINK immediately
+  // FIX: If we have a movie slug, send DIRECT LINKS immediately
+  // If no movie slug, send welcome message
   if (movieSlug) {
-    await sendVideoLink(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL);
+    console.log('Sending direct movie links for:', movieSlug);
+    await sendMovieLinks(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL);
   } else {
-    // Only send welcome message if no movie slug
+    console.log('No movie slug, sending welcome message');
     await sendWelcomeMessage(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL);
   }
 }
@@ -65,7 +66,7 @@ async function handleCallbackQuery(callbackQuery, TELEGRAM_BOT_TOKEN, BASE_URL) 
   if (data.startsWith('movie_')) {
     const movieSlug = data.replace('movie_', '');
     if (/^[a-zA-Z0-9-]+$/.test(movieSlug)) {
-      await sendVideoLink(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL);
+      await sendMovieLinks(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL);
     } else {
       await sendErrorMessage(chatId, TELEGRAM_BOT_TOKEN, BASE_URL);
     }
@@ -101,19 +102,29 @@ Click below to get started:`;
   await sendTelegramMessage(chatId, welcomeText, TELEGRAM_BOT_TOKEN, keyboard);
 }
 
-async function sendVideoLink(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL) {
-  console.log('Sending video link for slug:', movieSlug);
+async function sendMovieLinks(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL) {
+  if (!movieSlug || movieSlug === 'no_movie') {
+    await sendNoMovieMessage(chatId, TELEGRAM_BOT_TOKEN, BASE_URL);
+    return;
+  }
 
   const videoLink = `${BASE_URL}/video/${movieSlug}`;
+  const movieLink = `${BASE_URL}/movie/${movieSlug}`;
 
-  const userText = `🎬 *Direct Video Link Ready!* 🎬
+  const userText = `🎬 *Movie Link Ready!* 🎬
 
-📺 *Click the link below to watch:*
+📺 *Direct Video Link:*
 ${videoLink}
+
+🌐 *Movie Page:*
+${movieLink}
+
+⭐ *Website:*
+${BASE_URL}
 
 Enjoy your movie! 🍿`;
 
-  console.log('Sending direct video link:', videoLink);
+  // Send the direct links immediately without welcome message
   await sendTelegramMessage(chatId, userText, TELEGRAM_BOT_TOKEN, null, true);
 }
 
@@ -173,6 +184,42 @@ async function sendTelegramMessage(chatId, text, TELEGRAM_BOT_TOKEN, replyMarkup
   } catch (error) {
     console.error('Error sending Telegram message:', error);
     return null;
+  }
+}
+
+async function sendTelegramPhoto(chatId, photoUrl, caption, TELEGRAM_BOT_TOKEN) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+  
+  const body = {
+    chat_id: chatId,
+    photo: photoUrl,
+    caption: caption,
+    parse_mode: 'Markdown'
+  };
+
+  console.log('Sending photo to Telegram API...');
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('Telegram API photo error:', result);
+      throw new Error('Photo send failed');
+    } else {
+      console.log('Photo sent successfully to:', chatId);
+      return result.result;
+    }
+  } catch (error) {
+    console.error('Error sending Telegram photo:', error);
+    throw error;
   }
 }
 
