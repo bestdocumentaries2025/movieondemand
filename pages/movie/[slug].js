@@ -1,3 +1,5 @@
+
+
 // import { useRouter } from 'next/router'
 // import Head from 'next/head'
 // import Image from 'next/image'
@@ -94,7 +96,6 @@
 //     setImageError(true)
 //   }
 
-//   // Generate absolute thumbnail URL
 //   const getAbsoluteThumbnailUrl = (thumbnail) => {
 //     if (!thumbnail) return `${SITE_URL}/fallback-image.jpg`;
     
@@ -112,61 +113,61 @@
 //   const absoluteThumbnail = getAbsoluteThumbnailUrl(movie.thumbnail);
 //   const currentUrl = `${SITE_URL}/movie/${movie.slug}`;
 //   const shareTitle = `${movie.title} - Watch Online Free`;
-//   const shareDescription = movie.description;
+//   const shareDescription = movie.description || `Watch ${movie.title} online for free in ${movie.quality} quality`;
 
-//   // Generate article schema
-//   const articleSchema = {
-//     "@context": "https://schema.org",
-//     "@type": "Article",
-//     "headline": shareTitle,
-//     "description": shareDescription,
-//     "image": absoluteThumbnail,
-//     "author": {
-//       "@type": "Organization",
-//       "name": "Movie On Demand"
-//     },
-//     "publisher": {
-//       "@type": "Organization",
-//       "name": "Movie On Demand",
-//       "logo": {
-//         "@type": "ImageObject",
-//         "url": `${SITE_URL}/logo.png`
-//       }
-//     },
-//     "datePublished": new Date(movie.releaseYear, 0, 1).toISOString(),
-//     "dateModified": new Date().toISOString(),
-//     "mainEntityOfPage": {
-//       "@type": "WebPage",
-//       "@id": currentUrl
-//     },
-//     "genre": movie.genre,
-//     "contentRating": movie.rating,
-//     "duration": formatDurationForSchema(movie.duration)
+//   const generateStructuredData = () => {
+//     const baseSchema = {
+//       "@context": "https://schema.org",
+//       "@type": "Movie",
+//       "name": movie.title,
+//       "description": movie.description || `Watch ${movie.title} online for free`,
+//       "url": currentUrl,
+//     }
+
+//     if (absoluteThumbnail && !absoluteThumbnail.includes('fallback-image.jpg')) {
+//       baseSchema.image = absoluteThumbnail;
+//     }
+
+//     if (movie.releaseYear) {
+//       baseSchema.dateCreated = movie.releaseYear.toString();
+//     }
+
+//     if (movie.director && movie.director !== 'N/A') {
+//       baseSchema.director = {
+//         "@type": "Person",
+//         "name": movie.director
+//       };
+//     }
+
+//     if (movie.cast && Array.isArray(movie.cast) && movie.cast.length > 0) {
+//       baseSchema.actor = movie.cast.slice(0, 5).map(actor => ({
+//         "@type": "Person",
+//         "name": actor
+//       }));
+//     }
+
+//     if (movie.genre) {
+//       baseSchema.genre = movie.genre;
+//     }
+
+//     if (movie.duration && movie.duration !== 'N/A') {
+//       baseSchema.duration = formatDurationForSchema(movie.duration);
+//     }
+
+//     if (movie.rating && movie.rating !== 'N/A') {
+//       baseSchema.contentRating = movie.rating;
+//     }
+
+//     if (movie.country) {
+//       baseSchema.countryOfOrigin = {
+//         "@type": "Country",
+//         "name": movie.country
+//       };
+//     }
+
+//     return baseSchema;
 //   }
 
-//   // Generate movie schema
-//   const movieSchema = {
-//     "@context": "https://schema.org",
-//     "@type": "Movie",
-//     "name": movie.title,
-//     "description": movie.description,
-//     "image": absoluteThumbnail,
-//     "dateCreated": movie.releaseYear,
-//     "director": {
-//       "@type": "Person",
-//       "name": movie.director
-//     },
-//     "actor": movie.cast ? movie.cast.map(actor => ({
-//       "@type": "Person",
-//       "name": actor
-//     })) : [],
-//     "genre": movie.genre,
-//     "duration": formatDurationForSchema(movie.duration),
-//     "contentRating": movie.rating,
-//     "countryOfOrigin": movie.country
-//   }
-
-//   // Social Sharing Functions
 //   const shareOnFacebook = () => {
 //     const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
 //     window.open(shareUrl, '_blank', 'width=600,height=400');
@@ -190,9 +191,7 @@
 //     });
 //   }
 
-//   // Render video player based on source - ONLY if videoSource exists and is not "-"
 //   const renderVideoPlayer = () => {
-//     // Check if videoSource is missing, empty, or equals "-"
 //     if (!movie.videoSource || movie.videoSource === "-" || movie.videoSource === "" || !movie.videoId) {
 //       return (
 //         <div className="w-full aspect-video bg-gray-900 flex items-center justify-center rounded-lg">
@@ -206,7 +205,6 @@
 //       )
 //     }
 
-//     // If videoSource exists and is valid, render the appropriate player
 //     if (movie.videoSource === 'dailymotion') {
 //       return <DailymotionPlayer videoId={movie.videoId} title={movie.title} autoplay={false} />
 //     } else if (movie.videoSource === 'youtube') {
@@ -216,7 +214,6 @@
 //     }
 //   }
 
-//   // Check if video player should be displayed
 //   const shouldShowVideoPlayer = movie.videoSource && movie.videoSource !== "-" && movie.videoSource !== "" && movie.videoId;
 
 //   if (showNotification && movie.category === 'Adult') {
@@ -281,14 +278,15 @@
 //     return null
 //   }
 
+//   const structuredData = generateStructuredData();
+
 //   return (
 //     <div className="min-h-screen bg-black">
 //       <Head>
 //         <title>{shareTitle}</title>
 //         <meta name="description" content={shareDescription} />
         
-//         {/* Open Graph / Facebook */}
-//         <meta property="og:type" content="article" />
+//         <meta property="og:type" content="video.movie" />
 //         <meta property="og:url" content={currentUrl} />
 //         <meta property="og:title" content={shareTitle} />
 //         <meta property="og:description" content={shareDescription} />
@@ -298,33 +296,25 @@
 //         <meta property="og:site_name" content="Movie On Demand" />
 //         <meta property="og:locale" content="en_US" />
         
-//         {/* Twitter */}
 //         <meta property="twitter:card" content="summary_large_image" />
 //         <meta property="twitter:url" content={currentUrl} />
 //         <meta property="twitter:title" content={shareTitle} />
 //         <meta property="twitter:description" content={shareDescription} />
 //         <meta property="twitter:image" content={absoluteThumbnail} />
         
-//         {/* Additional Meta Tags */}
 //         <meta name="keywords" content={`${movie.title}, ${movie.genre}, ${movie.releaseYear}, watch online, free streaming`} />
 //         <link rel="canonical" href={currentUrl} />
 //       </Head>
 
-//       {/* JSON-LD Structured Data */}
 //       <script
 //         type="application/ld+json"
-//         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
-//       />
-//       <script
-//         type="application/ld+json"
-//         dangerouslySetInnerHTML={{ __html: JSON.stringify(movieSchema) }}
+//         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
 //       />
 
 //       <Header />
       
 //       <main className="pt-20 min-h-screen">
 //         <div className="container mx-auto px-4 py-8">
-//           {/* Video Player Section - ONLY show if shouldShowVideoPlayer is true */}
 //           {shouldShowVideoPlayer && (
 //             <section className="mb-8" aria-labelledby="player-heading">
 //               <h2 id="player-heading" className="sr-only">
@@ -336,7 +326,6 @@
 //             </section>
 //           )}
 
-//           {/* Social Sharing Buttons */}
 //           <section className="mb-6">
 //             <div className="flex flex-wrap gap-3 justify-center md:justify-start">
 //               <button
@@ -381,7 +370,6 @@
 //             </div>
 //           </section>
 
-//           {/* Telegram Link Section */}
 //           <section className="mb-8">
 //             <div className="flex flex-col items-center justify-center space-y-4">
 //               {TELEGRAM_BOT_USERNAME && (
@@ -413,7 +401,6 @@
 //             </div>
 //           </section>
 
-//           {/* Movie Details Grid */}
 //           <section className="grid lg:grid-cols-3 gap-8 mb-12">
 //             <div className="lg:col-span-2">
 //               <header className="mb-6">
@@ -421,19 +408,31 @@
 //                   {movie.title}
 //                 </h1>
 //                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300 mb-4">
-//                   <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
-//                     {movie.rating}
-//                   </span>
-//                   <span>{movie.releaseYear}</span>
-//                   <span>{formatDuration(movie.duration)}</span>
-//                   <span className="border border-gray-400 px-2 py-1 rounded text-xs">
-//                     {movie.quality}
-//                   </span>
-//                   <span>{movie.language}</span>
+//                   {movie.rating && movie.rating !== 'N/A' && (
+//                     <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
+//                       {movie.rating}
+//                     </span>
+//                   )}
+//                   {movie.releaseYear && (
+//                     <span>{movie.releaseYear}</span>
+//                   )}
+//                   {movie.duration && movie.duration !== 'N/A' && (
+//                     <span>{formatDuration(movie.duration)}</span>
+//                   )}
+//                   {movie.quality && (
+//                     <span className="border border-gray-400 px-2 py-1 rounded text-xs">
+//                       {movie.quality}
+//                     </span>
+//                   )}
+//                   {movie.language && (
+//                     <span>{movie.language}</span>
+//                   )}
 //                 </div>
-//                 <p className="text-lg text-gray-200 leading-relaxed">
-//                   {movie.description}
-//                 </p>
+//                 {movie.description && (
+//                   <p className="text-lg text-gray-200 leading-relaxed">
+//                     {movie.description}
+//                   </p>
+//                 )}
 //               </header>
 
 //               <div className="space-y-8">
@@ -465,13 +464,16 @@
 //                   <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-4">
 //                     {!imageError ? (
 //                       <Image
-//                         src={movie.thumbnail}
+//                         src={movie.thumbnail || '/fallback-image.jpg'}
 //                         alt={`Official poster for ${movie.title}`}
 //                         fill
 //                         sizes="(max-width: 768px) 100vw, 400px"
 //                         className="object-cover hover:scale-105 transition-transform duration-300"
 //                         priority
 //                         onError={handleImageError}
+//                         style={{
+//                             filter: 'brightness(1.05) contrast(1.15) saturate(1.12) hue-rotate(1deg)'
+//                              }}
 //                       />
 //                     ) : (
 //                       <div className="w-full h-full bg-gray-800 flex items-center justify-center">
@@ -500,31 +502,35 @@
 //                 </div>
 //               </div>
 
-//               <div className="bg-gray-800 rounded-lg p-6">
-//                 <h3 className="text-xl font-bold mb-4 text-white">Cast</h3>
-//                 <div className="flex flex-wrap gap-2">
-//                   {movie.cast && movie.cast.map((actor, index) => (
-//                     <span key={index} className="bg-black px-3 py-1 rounded text-sm hover:bg-red-600 transition cursor-pointer">
-//                       {actor}
-//                     </span>
-//                   ))}
+//               {movie.cast && movie.cast.length > 0 && (
+//                 <div className="bg-gray-800 rounded-lg p-6">
+//                   <h3 className="text-xl font-bold mb-4 text-white">Cast</h3>
+//                   <div className="flex flex-wrap gap-2">
+//                     {movie.cast.map((actor, index) => (
+//                       <span key={index} className="bg-black px-3 py-1 rounded text-sm hover:bg-red-600 transition cursor-pointer">
+//                         {actor}
+//                       </span>
+//                     ))}
+//                   </div>
 //                 </div>
-//               </div>
+//               )}
 
-//               <div className="bg-gray-800 rounded-lg p-6">
-//                 <h3 className="text-xl font-bold mb-4 text-white">Tags</h3>
-//                 <div className="flex flex-wrap gap-2">
-//                   {movie.tags && movie.tags.map((tag, index) => (
-//                     <Link 
-//                       key={index}
-//                       href={`/search?query=${encodeURIComponent(tag)}`}
-//                       className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors"
-//                     >
-//                       {tag}
-//                     </Link>
-//                   ))}
+//               {movie.tags && movie.tags.length > 0 && (
+//                 <div className="bg-gray-800 rounded-lg p-6">
+//                   <h3 className="text-xl font-bold mb-4 text-white">Tags</h3>
+//                   <div className="flex flex-wrap gap-2">
+//                     {movie.tags.map((tag, index) => (
+//                       <Link 
+//                         key={index}
+//                         href={`/search?query=${encodeURIComponent(tag)}`}
+//                         className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors"
+//                       >
+//                         {tag}
+//                       </Link>
+//                     ))}
+//                   </div>
 //                 </div>
-//               </div>
+//               )}
 //             </div>
 //           </section>
 
@@ -535,19 +541,23 @@
 //             autoRotate={true}
 //           />
 
-//           <RelatedMoviesGrid
-//             movies={moviesData.filter(m => m.category === movie.category)}
-//             currentMovieId={movie.id}
-//             title={`More ${movie.category} Movies`}
-//           />
+//           {movie.category && (
+//             <RelatedMoviesGrid
+//               movies={moviesData.filter(m => m.category === movie.category)}
+//               currentMovieId={movie.id}
+//               title={`More ${movie.category} Movies`}
+//             />
+//           )}
 
-//           <RelatedMoviesGrid
-//             movies={moviesData.filter(m => 
-//               m.genre && movie.genre && m.genre.split(', ').some(g => movie.genre.includes(g))
-//             )}
-//             currentMovieId={movie.id}
-//             title={`Similar ${movie.genre ? movie.genre.split(',')[0] : 'Movies'}`}
-//           />
+//           {movie.genre && (
+//             <RelatedMoviesGrid
+//               movies={moviesData.filter(m => 
+//                 m.genre && movie.genre && m.genre.split(', ').some(g => movie.genre.includes(g))
+//               )}
+//               currentMovieId={movie.id}
+//               title={`Similar ${movie.genre ? movie.genre.split(',')[0] : 'Movies'}`}
+//             />
+//           )}
 //         </div>
 //       </main>
 
@@ -566,12 +576,12 @@
 // }
 
 // function formatDuration(duration) {
-//   if (!duration) return 'N/A'
+//   if (!duration || duration === 'N/A') return 'N/A'
 //   return duration.replace('PT', '').replace('H', 'h ').replace('M', 'm').replace('S', 's')
 // }
 
 // function formatDurationForSchema(duration) {
-//   if (!duration) return 'PT0H0M'
+//   if (!duration || duration === 'N/A') return undefined
 //   return duration
 // }
 
@@ -582,7 +592,7 @@
 //   const isThriller = genres.includes('thriller')
 //   const isRomance = genres.includes('romance')
 
-//   let plot = `<p class="text-gray-300 leading-relaxed mb-4">${movie.description}</p>`
+//   let plot = movie.description ? `<p class="text-gray-300 leading-relaxed mb-4">${movie.description}</p>` : '<p class="text-gray-300 leading-relaxed mb-4">No plot summary available.</p>'
   
 //   if (isAction && isThriller) {
 //     plot += `
@@ -613,7 +623,7 @@
 //     plot += `
 //       <p class="text-gray-300 leading-relaxed mb-4">
 //         The narrative unfolds with meticulous pacing, allowing each story beat to land with 
-//         maximum impact. Director ${movie.director} demonstrates a keen understanding of 
+//         maximum impact. ${movie.director ? `Director ${movie.director}` : 'The director'} demonstrates a keen understanding of 
 //         visual storytelling, using cinematography and editing to enhance the emotional 
 //         weight of each scene.
 //       </p>
@@ -631,12 +641,16 @@
 // function generateCharacterAnalysis(movie) {
 //   const mainCast = movie.cast ? movie.cast.slice(0, 3) : []
   
-//   return `
+//   let analysis = `
 //     <div class="space-y-4">
 //       <p class="text-gray-300 leading-relaxed">
 //         The ensemble cast delivers powerful performances that bring depth and authenticity to their characters. 
 //         Each actor embodies their role with such conviction that the characters feel genuinely lived-in and real.
 //       </p>
+//   `
+
+//   if (mainCast.length > 0) {
+//     analysis += `
 //       <div class="bg-gray-800 p-4 rounded-lg">
 //         <h3 class="text-lg font-semibold mb-2 text-white">Key Performances:</h3>
 //         <ul class="list-disc list-inside space-y-1 text-gray-300">
@@ -645,33 +659,39 @@
 //           `).join('')}
 //         </ul>
 //       </div>
+//     `
+//   }
+
+//   analysis += `
 //       <p class="text-gray-300 leading-relaxed">
 //         The character development throughout the film is particularly noteworthy, with each main character 
 //         undergoing significant growth and transformation that feels earned and authentic to their journey.
 //       </p>
 //     </div>
 //   `
+
+//   return analysis
 // }
 
 // function generateProductionInsights(movie) {
 //   return `
 //     <div class="space-y-4">
 //       <p class="text-gray-300 leading-relaxed">
-//         Directed by <strong>${movie.director}</strong>, this ${movie.releaseYear} production showcases 
+//         ${movie.director ? `Directed by <strong>${movie.director}</strong>, this` : 'This'} ${movie.releaseYear ? `${movie.releaseYear} production` : 'production'} showcases 
 //         exceptional craftsmanship across all technical departments. The film's visual language is 
 //         carefully constructed to support the narrative and enhance the emotional impact of each scene.
 //       </p>
 //       <p class="text-gray-300 leading-relaxed">
-//         The ${movie.quality} presentation ensures that viewers can appreciate the meticulous attention 
+//         ${movie.quality ? `The ${movie.quality} presentation ensures that viewers can appreciate the meticulous attention 
 //         to detail in every frame, from the carefully composed shots to the nuanced production design 
-//         that creates a fully immersive viewing experience.
+//         that creates a fully immersive viewing experience.` : 'The presentation ensures viewers can appreciate the meticulous attention to detail in every frame.'}
 //       </p>
 //       <div class="grid grid-cols-2 gap-4 text-sm">
 //         <div class="bg-gray-800 p-3 rounded">
 //           <strong class="text-white">Runtime:</strong> ${formatDuration(movie.duration)}
 //         </div>
 //         <div class="bg-gray-800 p-3 rounded">
-//           <strong class="text-white">Quality:</strong> ${movie.quality}
+//           <strong class="text-white">Quality:</strong> ${movie.quality || 'N/A'}
 //         </div>
 //       </div>
 //     </div>
@@ -684,7 +704,7 @@
 //   return `
 //     <div class="space-y-4">
 //       <p class="text-gray-300 leading-relaxed">
-//         <strong>"${movie.title}"</strong> is essential viewing for fans of ${movie.genre} cinema. 
+//         <strong>"${movie.title}"</strong> is essential viewing for fans of ${movie.genre || 'quality'} cinema. 
 //         The film offers a perfect blend of entertainment and substance, making it equally suitable 
 //         for casual viewers and cinephiles looking for depth and meaning in their movie experiences.
 //       </p>
@@ -699,8 +719,8 @@
 //       </div>
 //       <p class="text-gray-300 leading-relaxed">
 //         Whether you're looking for an engaging story, powerful performances, or simply quality 
-//         entertainment, this film delivers on all fronts and represents some of the best that 
-//         ${movie.releaseYear} cinema has to offer.
+//         entertainment, this film delivers on all fronts ${movie.releaseYear ? `and represents some of the best that 
+//         ${movie.releaseYear} cinema has to offer.` : 'and represents quality cinema.'}
 //       </p>
 //     </div>
 //   `
@@ -741,6 +761,42 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Image from 'next/image'
@@ -754,7 +810,6 @@ import YouTubePlayer from '../../components/YouTubePlayer'
 import { RelatedMoviesGrid } from '../../components/RelatedMovieCard'
 import moviesData from '../../data/data.json'
 
-const TELEGRAM_BOT_USERNAME = "onlyondemand_bot";
 const SITE_URL = "https://movieondemand.vercel.app";
 
 export default function MoviePage({ movie }) {
@@ -1113,32 +1168,28 @@ export default function MoviePage({ movie }) {
 
           <section className="mb-8">
             <div className="flex flex-col items-center justify-center space-y-4">
-              {TELEGRAM_BOT_USERNAME && (
-                <div className="w-full max-w-md">
-                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <h3 className="text-xl font-bold mb-3 text-white text-center">Get Link via Telegram Full Complete Movie or TvShow.</h3>
-                    <div className="space-y-4">
-                      <p className="text-sm text-gray-300 text-center">
-                        Click below to get this movie link via Telegram
-                      </p>
-                      <a
-                        href={`https://t.me/${TELEGRAM_BOT_USERNAME}?start=${movie.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-3 bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-lg transition-all duration-300 hover:scale-105 w-full"
-                      >
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.191c-.153.001-.491.236-.491.236l-2.557 1.386-1.007 3.232s-.146.669.432.669c.578 0 1.396-.506 1.396-.506l3.232-2.072.832-.249c.91-.273.91-.691.91-.691s.063-.51-.699-.405zm-3.504 4.185l-1.105 3.644s-.082.405-.405.236c-.324-.167-2.43-1.558-2.43-1.558l-3.314-2.072s-.405-.273.083-.649c.487-.375 3.562-2.311 5.153-3.316.785-.499.578-.457.785.167.207.624.833 2.311.833 2.311l.399 1.447zm-2.97 4.462c-.167 0-.236-.124-.472-.291-.235-.167-1.852-1.213-1.852-1.213l-2.229-1.423s-.291-.188.062-.432c.354-.244 2.103-1.365 3.785-2.349.602-.354.602-.236.732.354.13.59.602 2.433.602 2.433l.354 1.301c.021.089-.021.188-.104.244-.062.041-.143.063-.226.063l-.65.114z"/>
-                        </svg>
-                        <span className="font-semibold">Get Link on Telegram</span>
-                      </a>
-                      <p className="text-xs text-gray-400 text-center">
-                        You'll need to subscribe to our channel to get the link
-                      </p>
-                    </div>
+              <div className="w-full max-w-md">
+                <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-6 border border-red-500 shadow-lg">
+                  <h3 className="text-xl font-bold mb-3 text-white text-center">Watch Full Movie Now</h3>
+                  <div className="space-y-4">
+                    <p className="text-sm text-white text-center">
+                      Click below to watch the complete movie in high quality
+                    </p>
+                    <Link
+                      href={`/video/${movie.slug}`}
+                      className="flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-red-600 px-6 py-4 rounded-lg transition-all duration-300 hover:scale-105 w-full font-bold text-lg"
+                    >
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                      <span>Play Full Movie Now</span>
+                    </Link>
+                    <p className="text-xs text-red-200 text-center">
+                      Direct streaming in HD quality with no interruptions
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </section>
 
