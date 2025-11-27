@@ -26,7 +26,7 @@ export default function Document() {
         {/* SEO */}
         <meta name="description" content="Movie On Demand Service - Request any movie via Telegram by sending movie name, year, and language. We add requested movies within 24 hours." />
         <meta name="keywords" content="movie on demand, request movies, free movies, tvshows, telegram movie request, watch movies online, movie streaming" />
-        <meta name="google-site-verification" content="f0ytofPk6osR1lyJdPSVjfoEpyQd5lgrUt9totCHxzM" />
+        <meta name="google-site-verification" content="bjYdIx-90u3zjA0auABbzubTw-I6CiC6EBebU9dCR04" />
         <meta name="author" content="Movie On Demand" />
         {/* Open Graph Meta Tags */}
         <meta property="og:site_name" content="Movie On Demand - Movie within 24 hours." />
