@@ -1,21 +1,26 @@
+// pages/api/telegram/webhook.js
 export default async function handler(req, res) {
+  console.log('=== TELEGRAM WEBHOOK CALLED ===');
+  console.log('Method:', req.method);
+  
   if (req.method !== 'POST') {
+    console.log('Returning 405 - Method not allowed');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://movieondemand.vercel.app';
 
+  console.log('TELEGRAM_BOT_TOKEN exists:', !!TELEGRAM_BOT_TOKEN);
+  
   if (!TELEGRAM_BOT_TOKEN) {
-    console.error('TELEGRAM_BOT_TOKEN environment variable is missing');
+    console.error('TELEGRAM_BOT_TOKEN is missing');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  console.log('=== WEBHOOK RECEIVED ===');
-
   try {
     const update = req.body;
-    console.log('Update:', JSON.stringify(update, null, 2));
+    console.log('Update body:', JSON.stringify(update, null, 2));
     
     if (update.message) {
       await handleMessage(update.message, TELEGRAM_BOT_TOKEN, BASE_URL);
@@ -23,10 +28,11 @@ export default async function handler(req, res) {
       await handleCallbackQuery(update.callback_query, TELEGRAM_BOT_TOKEN, BASE_URL);
     }
 
+    console.log('Webhook processed successfully');
     res.status(200).json({ ok: true });
   } catch (error) {
     console.error('Telegram webhook error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(200).json({ ok: true });
   }
 }
 
@@ -36,7 +42,6 @@ async function handleMessage(message, TELEGRAM_BOT_TOKEN, BASE_URL) {
 
   console.log(`Processing message from ${chatId}: ${text}`);
 
-  // Extract movie slug from /start command if present
   let movieSlug = '';
   if (text.startsWith('/start')) {
     const parts = text.split(' ');
@@ -45,7 +50,6 @@ async function handleMessage(message, TELEGRAM_BOT_TOKEN, BASE_URL) {
   }
 
   // FIX: If we have a movie slug, send DIRECT LINKS immediately
-  // If no movie slug, send welcome message
   if (movieSlug) {
     console.log('Sending direct movie links for:', movieSlug);
     await sendMovieLinks(chatId, movieSlug, TELEGRAM_BOT_TOKEN, BASE_URL);
@@ -124,7 +128,6 @@ ${BASE_URL}
 
 Enjoy your movie! 🍿`;
 
-  // Send the direct links immediately without welcome message
   await sendTelegramMessage(chatId, userText, TELEGRAM_BOT_TOKEN, null, true);
 }
 
