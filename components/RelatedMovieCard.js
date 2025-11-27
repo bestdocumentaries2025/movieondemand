@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Play } from 'lucide-react'
 
 export default function RelatedMovieCard({ 
   movie, 
@@ -76,11 +77,23 @@ export default function RelatedMovieCard({
           
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100">
+          {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100">
             <div className="bg-red-600 hover:bg-red-700 rounded-full p-4 shadow-2xl border-2 border-white transition-all duration-300 hover:scale-110">
               ▶
             </div>
-          </div>
+          </div> */}
+
+   <div className="absolute inset-0 flex items-center justify-center">
+                <div className="transform transition-all duration-300 group-hover:scale-110">
+                  <div className="bg-red-600 hover:bg-red-700 rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110">
+                    <Play size={24} className="text-white" />
+                  </div>
+                  <p className="text-white text-sm font-semibold mt-2 text-center drop-shadow-2xl">
+                    Play
+                  </p>
+                </div>
+              </div>
+
 
           <div className="absolute top-0 left-0 right-0 p-2 bg-gradient-to-b from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="flex items-center justify-between text-xs text-white">
