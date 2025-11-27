@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image';
+import { Play } from 'lucide-react'
 
 export default function MovieCard({ movie }) {
   const [isHovered, setIsHovered] = useState(false)
@@ -40,7 +41,7 @@ export default function MovieCard({ movie }) {
                 </h3>
               </div>
 
-              <div className="absolute inset-0 flex items-center justify-center">
+              {/* <div className="absolute inset-0 flex items-center justify-center">
                 <div className="transform transition-all duration-300 group-hover:scale-110">
                  <a 
                   href="https://t.me/movieandtvshowondemand" 
@@ -50,6 +51,17 @@ export default function MovieCard({ movie }) {
                 >
                   💬 Request Movie
                 </a>
+                </div>
+              </div> */}
+               {/* Play Button - Center */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="transform transition-all duration-300 group-hover:scale-110">
+                  <div className="bg-red-600 hover:bg-red-700 rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110">
+                    <Play size={24} className="text-white" />
+                  </div>
+                  <p className="text-white text-sm font-semibold mt-2 text-center drop-shadow-2xl">
+                    Play
+                  </p>
                 </div>
               </div>
             </>
