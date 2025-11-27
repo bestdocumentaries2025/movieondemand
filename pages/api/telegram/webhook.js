@@ -1,80 +1,50 @@
 export default async function handler(req, res) {
+  // Telegram MUST always get 200 on any method
   if (req.method !== "POST") {
-    return res.status(200).send("OK"); // Telegram must ALWAYS get 200
+    return res.status(200).send("OK");
   }
 
-  const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://movieondemand.vercel.app";
+  const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  const BASE = process.env.NEXT_PUBLIC_BASE_URL || "https://movieondemand.vercel.app";
 
   const update = req.body;
 
-  if (update.message) {
-    await handleMessage(update.message, TELEGRAM_BOT_TOKEN, BASE_URL);
-  }
+  // Telegram deep-link: /start <slug>
+  if (update.message && update.message.text.startsWith("/start")) {
 
-  if (update.callback_query) {
-    await handleCallback(update.callback_query, TELEGRAM_BOT_TOKEN, BASE_URL);
+    const parts = update.message.text.split(" ");
+    const slug = parts[1] || "";
+
+    if (!slug) {
+      await send(update.message.chat.id, "❌ No movie found. Open from website.");
+      return res.status(200).json({ ok: true });
+    }
+
+    const videoURL = `${BASE}/video/${slug}`;
+    const movieURL = `${BASE}/movie/${slug}`;
+
+    const text =
+      `🎬 *Your Movie Link is Ready*\n\n` +
+      `▶️ *Direct Video Link:*\n${videoURL}\n\n` +
+      `📄 Movie Page:\n${movieURL}`;
+
+    await send(update.message.chat.id, text);
+
+    return res.status(200).json({ ok: true });
   }
 
   return res.status(200).json({ ok: true });
-}
 
-// --- MESSAGE HANDLER ---
-async function handleMessage(msg, token, BASE_URL) {
-  const chatId = msg.chat.id;
-  let slug = "";
-
-  if (msg.text.startsWith("/start")) {
-    const arr = msg.text.split(" ");
-    slug = arr[1] || "";
+  async function send(chatId, text) {
+    await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      }),
+    });
   }
-
-  const text = `🎬 Movie Link Ready\n\nClick the button below`;
-
-  const keyboard = {
-    inline_keyboard: [
-      [
-        {
-          text: "GET VIDEO LINK 🎬",
-          callback_data: slug ? `movie_${slug}` : "nomovie",
-        }
-      ],
-    ],
-  };
-
-  await sendMessage(chatId, text, token, keyboard);
-}
-
-// --- CALLBACK HANDLER ---
-async function handleCallback(query, token, BASE_URL) {
-  const chatId = query.message.chat.id;
-  const data = query.data;
-
-  if (data.startsWith("movie_")) {
-    const slug = data.replace("movie_", "");
-    const link = `${BASE_URL}/video/${slug}`;
-
-    const text = `🎬 DIRECT MOVIE LINK\n${link}`;
-
-    await sendMessage(chatId, text, token, null, true);
-  }
-
-  return;
-}
-
-// --- SEND MESSAGE ---
-async function sendMessage(chatId, text, token, reply_markup = null, disablePreview = true) {
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
-
-  await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: "Markdown",
-      disable_web_page_preview: disablePreview,
-      ...(reply_markup && { reply_markup })
-    }),
-  });
 }
