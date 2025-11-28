@@ -1110,7 +1110,7 @@ export default function MoviePage({ movie }) {
       <Header />
       
       <main className="pt-20 min-h-screen">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8"style={{ marginTop:'200px'}}>
           {shouldShowVideoPlayer && (
             <section className="mb-8" aria-labelledby="player-heading">
               <h2 id="player-heading" className="sr-only">

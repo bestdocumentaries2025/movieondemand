@@ -868,7 +868,7 @@ export default function MoviePage() {
       <Header />
       
       <main className="pt-20 min-h-screen">
-        <div className="container mx-auto px-4 py-8">
+         <div className="container mx-auto px-4 py-8"style={{ marginTop:'200px'}}>
           {/* Video Player Section - ONLY show if shouldShowVideoPlayer is true */}
           {shouldShowVideoPlayer && (
             <section className="mb-8" aria-labelledby="player-heading">
@@ -882,7 +882,7 @@ export default function MoviePage() {
           )}
 
           {/* Social Sharing Buttons */}
-          {/* <section className="mb-6">
+          <section className="mb-6">
             <div className="flex flex-wrap gap-3 justify-center md:justify-start">
               <button
                 onClick={shareOnFacebook}
@@ -924,7 +924,7 @@ export default function MoviePage() {
                 Copy Link
               </button>
             </div>
-          </section> */}
+          </section>
 
           {/* Telegram Link Section */}
           {/* <section className="mb-8">
