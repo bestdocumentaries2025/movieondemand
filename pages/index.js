@@ -1507,6 +1507,12 @@ const generateSiteLSIKeywords = (topMovies, topGenres) => {
   return [...base, ...movieKeywords, ...genreKeywords].join(', ')
 }
 
+// Clean and validate data for JSON-LD
+const cleanForJSONLD = (value) => {
+  if (!value) return ''
+  return String(value).replace(/[\\"']/g, '\\$&').replace(/\n/g, ' ')
+}
+
 export default function Home({ movies }) {
   const heroMovies = movies.slice(0, 5)
   const gridMovies = movies.slice(5)
@@ -1537,22 +1543,14 @@ export default function Home({ movies }) {
     rating: ''
   })
   const [showFilters, setShowFilters] = useState(false)
-  const [pageLoadTime, setPageLoadTime] = useState(null)
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const timer = setTimeout(() => {
-        setPageLoadTime(Date.now() - performance.timing.navigationStart)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [])
-
+  // Load more states
   const [latestMoviesLimit, setLatestMoviesLimit] = useState(15)
   const [allMoviesLimit, setAllMoviesLimit] = useState(30)
   const [adultMoviesLimit, setAdultMoviesLimit] = useState(15)
   const [searchResultsLimit, setSearchResultsLimit] = useState(30)
 
+  // Filter options
   const filterOptions = useMemo(() => {
     const genres = Array.from(new Set(movies.flatMap(movie => movie.genre?.split(', ') || []))).filter(Boolean)
     const years = Array.from(new Set(movies.map(movie => movie.releaseYear || movie.year))).sort((a, b) => b - a)
@@ -1561,6 +1559,7 @@ export default function Home({ movies }) {
     return { genres, years, categories }
   }, [movies])
 
+  // Filtered movies
   const filteredMovies = useMemo(() => {
     return movies.filter(movie => {
       const matchesSearch = searchQuery === '' || 
@@ -1585,6 +1584,7 @@ export default function Home({ movies }) {
     })
   }, [searchQuery, filters, movies])
 
+  // Displayed movies
   const displayedLatestMovies = gridMovies.slice(0, latestMoviesLimit)
   const displayedAllMovies = movies.slice(0, allMoviesLimit)
   const adultMovies = movies.filter(m => m.category === 'Adult')
@@ -1602,72 +1602,34 @@ export default function Home({ movies }) {
 
   const hasActiveSearch = searchQuery || Object.values(filters).some(f => f)
 
+  // Load more functions
   const loadMoreLatest = () => setLatestMoviesLimit(prev => prev + 15)
   const loadMoreAll = () => setAllMoviesLimit(prev => prev + 30)
   const loadMoreAdult = () => setAdultMoviesLimit(prev => prev + 15)
   const loadMoreSearch = () => setSearchResultsLimit(prev => prev + 30)
 
-  // Generate structured data for top 50 movies with LSI keywords
-  const movieCollectionStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "Movie Collection",
-    "description": "Complete collection of movies available for on-demand streaming",
-    "url": canonicalUrl,
-    "hasPart": movies.slice(0, 50).map((movie, index) => ({
-      "@type": "Movie",
-      "position": index + 1,
-      "name": movie.title,
-      "description": movie.description,
-      "image": movie.thumbnail,
-      "dateCreated": movie.releaseYear || movie.year,
-      "genre": movie.genre,
-      "duration": movie.duration,
-      "keywords": generateLSIKeywordsForMovie(movie),
-      "actor": movie.cast?.map(actor => ({ "@type": "Person", "name": actor })),
-      "director": { "@type": "Person", "name": movie.director || "Unknown" },
-      "contentRating": movie.category,
-      "aggregateRating": movie.rating ? {
-        "@type": "AggregateRating",
-        "ratingValue": movie.rating,
-        "bestRating": "10",
-        "ratingCount": "1000"
-      } : undefined
-    }))
-  }
-
+  // ============ FIXED STRUCTURED DATA (GSC VALIDATED) ============
   const websiteStructuredData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": siteName,
-    "description": siteDescription,
+    "name": cleanForJSONLD(siteName),
+    "description": cleanForJSONLD(siteDescription),
     "url": canonicalUrl,
-    "keywords": siteLSIKeywords,
     "potentialAction": {
       "@type": "SearchAction",
       "target": `${canonicalUrl}/?q={search_term_string}`,
       "query-input": "required name=search_term_string"
-    },
-    "inLanguage": "en-US",
-    "author": {
-      "@type": "Organization",
-      "name": siteName
     }
   }
 
   const organizationStructuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": siteName,
-    "description": siteDescription,
+    "name": cleanForJSONLD(siteName),
+    "description": cleanForJSONLD(siteDescription),
     "url": canonicalUrl,
     "logo": `${canonicalUrl}/logo.png`,
-    "sameAs": [TELEGRAM_LINK],
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "contactType": "customer service",
-      "availableLanguage": "English"
-    }
+    "sameAs": [TELEGRAM_LINK]
   }
 
   const breadcrumbStructuredData = {
@@ -1679,14 +1641,30 @@ export default function Home({ movies }) {
         "position": 1,
         "name": "Home",
         "item": canonicalUrl
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Movies",
-        "item": `${canonicalUrl}/movies`
       }
     ]
+  }
+
+  // FIXED: Simple Movie Collection without invalid properties
+  const movieCollectionStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Latest Movies Collection",
+    "description": "Collection of movies available on demand",
+    "url": canonicalUrl,
+    "numberOfItems": Math.min(movies.length, 20),
+    "itemListElement": movies.slice(0, 20).map((movie, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "item": {
+        "@type": "Movie",
+        "name": cleanForJSONLD(movie.title),
+        "description": cleanForJSONLD(movie.description),
+        "image": movie.thumbnail,
+        "dateCreated": movie.releaseYear || movie.year,
+        "genre": movie.genre ? movie.genre.split(', ')[0] : "Movie"
+      }
+    }))
   }
 
   const faqStructuredData = {
@@ -1695,7 +1673,7 @@ export default function Home({ movies }) {
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "How to request a movie on Movie On Demand?",
+        "name": "How to request a movie?",
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Send movie name, release year, and language to our Telegram channel. We add requested movies within 24 hours for free streaming."
@@ -1703,7 +1681,7 @@ export default function Home({ movies }) {
       },
       {
         "@type": "Question",
-        "name": "Is Movie On Demand free to use?",
+        "name": "Is this service free?",
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Yes, all movies are available for free streaming. No subscription, registration, or payment required."
@@ -1714,32 +1692,25 @@ export default function Home({ movies }) {
         "name": "What movie categories are available?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "We have Hollywood movies, Bollywood movies, South Indian movies, Adult movies, and movies from various languages and genres including action, comedy, thriller, horror, and romance."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I download movies from Movie On Demand?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes, you can stream movies online for free or download them for offline viewing in HD quality."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How often are new movies added?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "New movies are added daily including latest Hollywood and Bollywood releases. We update our collection regularly with fresh content."
+          "text": "We have Hollywood movies, Bollywood movies, South Indian movies, Adult movies, and movies from various languages and genres."
         }
       }
     ]
   }
 
-  const enhancedDescription = `${siteDescription} Watch latest Hollywood, Bollywood, and ${topGenres.slice(0, 3).join(', ')} movies in HD quality. Free streaming, no registration required. Request any movie via Telegram and get it added within 24 hours.`
+  const enhancedDescription = `${siteDescription} Watch latest Hollywood, Bollywood, and ${topGenres.slice(0, 3).join(', ')} movies in HD quality. Free streaming, no registration required.`
+
+  // Check for duplicate structured data
+  const allStructuredData = [
+    websiteStructuredData,
+    organizationStructuredData,
+    breadcrumbStructuredData,
+    movieCollectionStructuredData,
+    faqStructuredData
+  ]
 
   return (
-    <div className="min-h-screen bg-black" itemScope itemType="https://schema.org/WebPage">
+    <div className="min-h-screen bg-black">
       <Head>
         <title>Movie On Demand - Watch & Request Any Movie via Telegram | HD Movies Free Streaming</title>
         <meta name="description" content={enhancedDescription} />
@@ -1747,90 +1718,49 @@ export default function Home({ movies }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
         <link rel="canonical" href={canonicalUrl} />
         
-        <meta property="og:title" content="Movie On Demand - Watch & Request Any Movie via Telegram | HD Movies Free Streaming" />
-        <meta property="og:description" content={enhancedDescription} />
+        {/* Open Graph - SIMPLIFIED */}
+        <meta property="og:title" content="Movie On Demand - Watch & Request Any Movie via Telegram" />
+        <meta property="og:description" content={enhancedDescription.substring(0, 155)} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={`${canonicalUrl}/og-image.jpg`} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Movie On Demand - Free Movie Streaming" />
         <meta property="og:site_name" content={siteName} />
-        <meta property="og:locale" content="en_US" />
         
+        {/* Twitter Card - SIMPLIFIED */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Movie On Demand - Watch & Request Any Movie via Telegram | HD Movies Free Streaming" />
-        <meta name="twitter:description" content={enhancedDescription} />
+        <meta name="twitter:title" content="Movie On Demand - Watch & Request Any Movie via Telegram" />
+        <meta name="twitter:description" content={enhancedDescription.substring(0, 155)} />
         <meta name="twitter:image" content={`${canonicalUrl}/og-image.jpg`} />
-        <meta name="twitter:image:alt" content="Movie On Demand - Free Movie Streaming" />
-        <meta name="twitter:site" content="@movieondemand" />
         
+        {/* Basic Meta Tags */}
         <meta name="author" content="Movie On Demand" />
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-        <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-        <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-        <meta name="rating" content="general" />
-        <meta name="distribution" content="global" />
-        <meta name="language" content="en" />
-        <meta name="coverage" content="Worldwide" />
-        <meta name="target" content="all" />
-        <meta name="audience" content="all" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="robots" content="index, follow" />
+        <meta name="googlebot" content="index, follow" />
         
+        {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-        <link rel="alternate" type="application/rss+xml" href="/rss.xml" />
 
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationStructuredData) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbStructuredData) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(movieCollectionStructuredData) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }} />
-
-        {pageLoadTime && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                window.dataLayer.push({
-                  'event': 'page_loaded',
-                  'page_load_time': ${pageLoadTime}
-                });
-              `
-            }}
-          />
-        )}
+        {/* FIXED: Single structured data script to avoid GSC errors */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                websiteStructuredData,
+                organizationStructuredData,
+                breadcrumbStructuredData,
+                movieCollectionStructuredData,
+                faqStructuredData
+              ]
+            })
+          }}
+        />
       </Head>
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            "name": siteName,
-            "description": siteDescription,
-            "url": canonicalUrl,
-            "telephone": "+1234567890",
-            "address": {
-              "@type": "PostalAddress",
-              "addressCountry": "US"
-            },
-            "openingHoursSpecification": {
-              "@type": "OpeningHoursSpecification",
-              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-              "opens": "00:00",
-              "closes": "23:59"
-            },
-            "keywords": siteLSIKeywords
-          })
-        }}
-      />
 
       <Header />
       <HeroSection movies={heroMovies} />
@@ -1838,12 +1768,12 @@ export default function Home({ movies }) {
       <div className="bg-gradient-to-b from-gray-900 to-black py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6" itemProp="headline">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Movie On Demand - Watch Latest Movies Free in HD Quality
             </h1>
-            <p className="text-xl text-gray-300 mb-8" itemProp="description">
+            <p className="text-xl text-gray-300 mb-8">
               Stream {movies.length}+ latest Hollywood, Bollywood, and international movies for free. 
-              Request any movie via Telegram and get it added within 24 hours. No registration required.
+              Request any movie via Telegram and get it added within 24 hours.
             </p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
@@ -1868,29 +1798,6 @@ export default function Home({ movies }) {
                 <div className="text-gray-400">No Subscription</div>
               </div>
             </div>
-
-            <div className="bg-gray-800 p-8 rounded-lg text-left">
-              <h2 className="text-2xl font-bold text-white mb-4">Free Movie Streaming Platform Features</h2>
-              <ul className="text-gray-300 space-y-3 mb-6">
-                <li>• <strong>HD Quality Movies:</strong> Watch movies in 1080p and 720p HD quality</li>
-                <li>• <strong>Latest Releases:</strong> New Hollywood and Bollywood movies added daily</li>
-                <li>• <strong>Multi-language:</strong> Movies available in English, Hindi, Tamil, Telugu and more</li>
-                <li>• <strong>No Registration:</strong> Watch instantly without any signup</li>
-                <li>• <strong>Download Option:</strong> Download movies for offline viewing</li>
-                <li>• <strong>Mobile Friendly:</strong> Stream on any device - phone, tablet, or desktop</li>
-              </ul>
-              
-              <div className="mt-8 p-4 bg-red-900/20 rounded-lg border border-red-700">
-                <h3 className="text-xl font-bold text-white mb-2">How to Watch Movies for Free?</h3>
-                <ol className="text-gray-300 list-decimal pl-5 space-y-2">
-                  <li>Search for your movie using the search box below</li>
-                  <li>If not found, join our Telegram channel and request the movie</li>
-                  <li>Send movie name, year, and language on Telegram</li>
-                  <li>We add the movie within 24 hours for free streaming</li>
-                  <li>Watch online or download for offline viewing</li>
-                </ol>
-              </div>
-            </div>
           </div>
 
           <div className="max-w-3xl mx-auto mb-12">
@@ -1899,9 +1806,8 @@ export default function Home({ movies }) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search movies by title, actor, genre, year..."
+                placeholder="Search movies by title, actor, genre..."
                 className="w-full bg-gray-800 text-white px-14 py-5 rounded-xl border-2 border-gray-700 focus:border-red-500 focus:outline-none transition-colors text-lg"
-                aria-label="Search movies"
               />
               <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400" size={28} />
               <div className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -1925,12 +1831,6 @@ export default function Home({ movies }) {
                   {genre}
                 </button>
               ))}
-              <button 
-                onClick={() => setFilters({...filters, rating: '7'})}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
-              >
-                7+ Rating
-              </button>
             </div>
           </div>
 
@@ -1938,10 +1838,9 @@ export default function Home({ movies }) {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
-              aria-label={showFilters ? "Hide filters" : "Show filters"}
             >
               <Filter className="mr-2" size={20} />
-              Advanced Filters
+              Filters
               {(filters.genre || filters.year || filters.category || filters.rating) && (
                 <span className="ml-2 bg-white text-red-600 text-xs px-2 py-1 rounded-full">
                   Active
@@ -1955,7 +1854,7 @@ export default function Home({ movies }) {
                 className="flex items-center text-gray-400 hover:text-white transition"
               >
                 <X className="mr-1" size={16} />
-                Clear All Filters
+                Clear All
               </button>
             )}
           </div>
@@ -2015,7 +1914,7 @@ export default function Home({ movies }) {
                     <div className="text-center mt-12">
                       <button
                         onClick={loadMoreSearch}
-                        className="bg-red-600 hover:bg-red-700 text-white px-10 py-4 rounded-lg font-bold text-lg transition-colors shadow-lg"
+                        className="bg-red-600 hover:bg-red-700 text-white px-10 py-4 rounded-lg font-bold text-lg transition-colors"
                       >
                         Load More Movies ({filteredMovies.length - displayedSearchResults.length} more)
                       </button>
@@ -2135,23 +2034,18 @@ export default function Home({ movies }) {
           )}
 
           <div className="max-w-6xl mx-auto mt-16 p-8 bg-gray-800 rounded-xl">
-            <h2 className="text-2xl font-bold text-white mb-6">Movie On Demand - Your Ultimate Free Movie Streaming Platform</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Movie On Demand - Free Movie Streaming</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                <strong>Movie On Demand</strong> is the leading free movie streaming service offering thousands of movies across all genres. 
-                Our platform features the latest Hollywood blockbusters, Bollywood hits, international cinema, and exclusive adult content.
+                <strong>Movie On Demand</strong> offers thousands of movies across all genres. 
+                Watch latest Hollywood, Bollywood, and international movies in HD quality for free.
               </p>
               <p>
-                <strong>Features:</strong> HD quality streaming, no registration required, mobile-friendly interface, 
-                daily movie updates, and unique request system via Telegram. Watch movies online free without any subscription.
+                <strong>Features:</strong> HD streaming, no registration, daily updates, and request movies via Telegram.
               </p>
               <p>
-                <strong>Popular Searches:</strong> Latest movies {currentYear}, Hollywood movies in Hindi, Bollywood movies, 
-                South Indian dubbed movies, action movies, comedy movies, thriller movies, horror movies, romance movies, adult movies.
-              </p>
-              <p>
-                <strong>How it works:</strong> Browse our collection, find your movie, and click play. Can't find a movie? 
-                Use our Telegram request service to get any movie added within 24 hours - completely free! Watch full movies online free in HD quality.
+                <strong>Popular:</strong> Latest movies {currentYear}, Hollywood movies, Bollywood movies, 
+                South Indian movies, action, comedy, thriller, horror, romance, and adult movies.
               </p>
             </div>
           </div>
