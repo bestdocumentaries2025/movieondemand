@@ -1559,6 +1559,134 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Image from 'next/image'
@@ -2039,7 +2167,7 @@ export default function MoviePage({ movie, seoTitle, seoDescription, lsiKeywords
             <div className="lg:col-span-2">
               <header className="mb-6">
                 <h1 className="text-4xl font-bold mb-2 text-white">
-                  {movie.title} <span className="text-gray-400">({movie.releaseYear})</span>
+                  {movie.title} <span className="text-gray-400"></span>
                 </h1>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300 mb-4">
                   {movie.rating && movie.rating !== 'N/A' && (
