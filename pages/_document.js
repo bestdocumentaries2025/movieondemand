@@ -45,8 +45,8 @@ export default function Document() {
         
         {/* Twitter Card Meta Tags */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:creator" content="@cmovieondemand" />
-        <meta name="twitter:site" content="@cmovieondemand" />
+        <meta name="twitter:creator" content="@OnDemandMovie" />
+        <meta name="twitter:site" content="@OnDemandMovie" />
         <meta name="twitter:title" content="Movie On Demand - Movie within 24 hours." />
         <meta name="twitter:description" content="Request any movie via Telegram by sending movie name, year, and language. We add requested movies within 24 hours." />
         <meta name="twitter:image" content={`${baseUrl}/og-image.jpg`} />

@@ -2062,12 +2062,16 @@ export default function MoviePage({ movie, seoTitle, seoDescription, lsiKeywords
         <meta property="og:image:height" content="1200" />
         <meta property="og:site_name" content="Movie On Demand" />
         
-        <meta property="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:creator" content="@OnDemandMovie" />
+        <meta name="twitter:site" content="@OnDemandMovie" />
+        <meta name="twitter:title" content="Movie On Demand - Movie within 24 hours." />
+        <meta name="twitter:description" content="Request any movie via Telegram by sending movie name, year, and language. We add requested movies within 24 hours." />
         <meta property="twitter:url" content={currentUrl} />
         <meta property="twitter:title" content={seoTitle} />
         <meta property="twitter:description" content={seoDescription} />
         <meta property="twitter:image" content={absoluteThumbnail} />
-        
+        <meta name="twitter:image:alt" content="Movie On Demand - Movie within 24 hours." />        
         <meta name="keywords" content={lsiKeywords} />
         <link rel="canonical" href={currentUrl} />
         
